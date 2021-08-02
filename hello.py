@@ -1,9 +1,12 @@
+from operator import methodcaller
 from flask import Flask, render_template, flash
 from flask_wtf import FlaskForm
 from flask_wtf.recaptcha import validators
 from wtforms import StringField
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 # FILTERS!!!
 #safe
@@ -16,14 +19,44 @@ from wtforms.validators import DataRequired
 
 # Create Flask Instance 
 app = Flask(__name__)
+# Add Database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# Secret Key!
 app.config['SECRET_KEY'] = "mysupersecretkey"
+# Initialize the Database
+db = SQLAlchemy(app)
+
+# Create Model
+class Users(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Create A String
+    def __repr__(self):
+        return '<Name %r>' % self.name
+
+
+# Create a Form Class
+class UserForm(FlaskForm):
+    name = StringField("Name", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired()])
+    submit = SubmitField("Submit")
 
 # Create a Form Class
 class NamerForm(FlaskForm):
     name = StringField("What's Your Name?", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
+
 # Create a route decorator
+
+@app.route('/user/add', methods=['GET', 'POST'])
+def add_user():
+    form = UserForm()
+    return render_template('add_user.html', form=form)
+
 @app.route('/')
 
 def index():
